@@ -48,12 +48,13 @@ export default function Nav() {
   const [navbarOpen, setNavbarOpen] = React.useState(false);
 
   const items = [
-    {
-      name: "About",
-      href: "/about",
-    },
+    //    {
+    //      name: "About",
+    //      href: "/about",
+    //    },
   ];
 
+  // TODO: menubar?
   return (
     <div>
       <div className="relative px-4 pt-6 sm:px-6 lg:px-8">
@@ -65,12 +66,12 @@ export default function Nav() {
             <div className="flex items-center justify-between w-full md:w-auto">
               <Link href="/">
                 <a href="#">
-                  <h1 className="inline-block px-4 text-xl font-medium align-middle sm:text-6xl">
+                  <h2 className="inline-block px-4 font-serif font-medium align-middle sm:text-6xl">
                     e
-                  </h1>
+                  </h2>
                 </a>
               </Link>
-              <div className="flex items-center -mr-2 md:hidden">
+              <div className="flex items-center hidden -mr-2">
                 <button
                   type="button"
                   className="inline-flex items-center justify-center p-2 bg-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
@@ -98,7 +99,7 @@ export default function Nav() {
       </div>
       <div
         className={
-          "absolute inset-x-0 top-0 z-20 p-2 transition transform origin-top-right md:hidden" +
+          "absolute inset-x-0 top-0 z-20 p-2 transition transform origin-top-right hidden" +
           (navbarOpen ? "" : " hidden")
         }
       >

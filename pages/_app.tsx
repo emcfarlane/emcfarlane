@@ -1,6 +1,7 @@
 import { AppProps } from "next/app";
 import "tailwindcss/tailwind.css";
 import { MDXProvider } from "@mdx-js/react";
+import "../styles/global.css";
 
 const components = {
   h1: (props) => (
@@ -26,11 +27,6 @@ function App({ Component, pageProps }: AppProps) {
         body {
           padding: 0;
           margin: 0;
-          //font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-          //  Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-          //  sans-serif;
-          font-family: Cambria, "Hoefler Text", Utopia, "Liberation Serif",
-            "Nimbus Roman No9 L Regular", Times, "Times New Roman", serif;
         }
 
         code {
