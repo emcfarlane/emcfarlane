@@ -1,0 +1,255 @@
+---
+title: 📚 Books
+tags: [books]
+---
+
+export const Books = (props) => {
+  return (
+    <div
+      style={{
+        display: "grid",
+        margin: "0 auto",
+        maxWidth: "100%",
+        gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+        columnGap: "1em",
+        rowGap: "1em",
+      }}
+    >
+      {props.children}
+    </div>
+  );
+}
+
+export const Book = ({ imgURL }) => {
+  return <img style={{}} src={imgURL} />;
+}
+
+My library of books to read.
+
+To Read
+----
+
+<Books>
+  <Book
+    title="The Master and Margarita"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1327867963l/117833.jpg"
+  />
+  <Book
+    title="Roadside Picnic"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51ECIYwS14L._SX320_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="High Growth Handbook: Scaling Startups From 10 to 10,000 People"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41NIPWM5OSL._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Angel's Game: The Cemetery of Forgotten Books 2"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41lyGDYJbqL._SX324_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Prisoner of Heaven: The Cemetery of Forgotten Books 3"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/411vkoS2pGL._SX324_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Software Design for Flexibility: How to Avoid Programming Yourself into a Corner"
+    imgURL="https://mitpress.mit.edu/sites/default/files/styles/large_book_cover/http/mitp-content-server.mit.edu%3A18180/books/covers/cover/%3Fcollid%3Dbooks_covers_0%26isbn%3D9780262045490%26type%3D.jpg"
+  />
+  <Book
+    title="Real-Time Collision Detection"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1356189896l/620505.jpg"
+  />
+  <Book
+    title="The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1556036622l/44525305.jpg"
+  />
+  <Book
+    title="The Art of Memory"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388724015l/245831.jpg"
+  />
+  <Book
+    title="Gödel, Escher, Bach: An Eternal Golden Braid"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1547125681l/24113._SY475_.jpg"
+  />
+  <Book
+    title="Don Quixote"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41EzXfowWeL._SX321_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Cuckoo's Egg: Tracking a Spy Through the Maze of Computer Espionage"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51qWblR2GXL._SX320_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Righteous Mind: Why Good People are Divided by Politics and Religion"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/411a4tVd1JL._SX323_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Count of Monte Cristo"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1309203605l/7126.jpg"
+  />
+  <Book
+    title="Fooled by Randomness: The Hidden Role of Chance in Life and in the Markets"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388180506l/38315.jpg"
+  />
+  <Book
+    title="The Black Swan: The Impact of the Highly Improbable"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1386925471l/242472.jpg"
+  />
+  <Book 
+    title="Hacker's Delight"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1385216522l/276079.jpg"
+  />
+  <Book 
+    title="Real-Time Rendering"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1348134043l/3610698.jpg"
+  />
+  <Book 
+    title="Foundations of Analog and Digital Electronic Circuits"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1348672439l/673752.jpg"
+  />
+  <Book 
+    title="Code: The Hidden Language of Computer Hardware and Software"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1328830222l/44882.jpg"
+  />
+  <Book 
+    title="What they don't Teach You at Harvard Business School"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1348412881l/467754.jpg"
+  />
+  <Book 
+    title="Side Hustle"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1498835207l/33585396.jpg"
+  />
+  <Book 
+    title="Sapiens: A Brief History of Humankind"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1420585954l/23692271.jpg"
+  />
+  <Book 
+    title="Homo Deus: A History of Tomorrow"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41x9l0H2UGL._SX324_BO1,204,203,200_.jpg"
+  />
+  <Book 
+    title="The Mushroom at the End of the World"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1431183255l/25510906.jpg"
+  />
+</Books>
+
+2021
+----
+
+<Books>
+  <Book
+    title="Get Together: How to build a community with your people"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/21+kN-3VLSL._SX331_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="An Elegant Puzzle: Systems of Engineering Management"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51aTO3pGp9L._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Revolt of The Public and the Crisis of Authority in the New Millennium"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/414lZg+LS7L._SX335_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Working in Public: The Making and Maintenance of Open Source Software"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/416VUDuqTML._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Klara and the Sun"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41Yw3d0mppL._SX323_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Hitchhiker's Guide to the Galaxy"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51FrBwYk+cL._SX328_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Death's End"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1430330507i/25451264.jpg"
+  />
+  <Book
+    title="The Dark Forest"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1412064931i/23168817.jpg"
+  />
+  <Book 
+    title="Ignition: History of Liquid Rocket Propellants "
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1339317383l/677285.jpg"
+  />
+  <Book
+    title="The Making of Prince of Persia"
+    imgURL="https://m.media-amazon.com/images/I/31TaTxvKaSL._SY346_.jpg"
+  />
+  <Book
+    title="Stubborn Attachments"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41sgCQOmYsL._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Scientific Freedom: The Elixir of Civilization"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41VQAnN5CUL._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="Piranesi"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51SNhGL3WuL._SX351_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Odyssey"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/51Zl3KNANDL._SX342_BO1,204,203,200_.jpg"
+  />
+</Books>
+
+2020
+----
+
+<Books>
+  <Book
+    title="The Dream Machine"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/41AEXkVkVKL._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Three-Body Problem"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1415428227l/20518872.jpg"
+  />
+  <Book
+    title="Kafka on the Shore"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1429638085l/4929.jpg"
+  />
+  <Book
+    title="Animal Farm"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1327959366l/5472.jpg"
+  />
+  <Book
+    title="The Art of Doing Science and Engineering"
+    imgURL="https://images-na.ssl-images-amazon.com/images/I/21leVtAEhAL._SX336_BO1,204,203,200_.jpg"
+  />
+  <Book
+    title="The Strange Library"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1419549475l/23128304.jpg"
+  />
+  <Book
+    title="The Shadow of the Wind - The Cemetery of Forgotten Books"
+    imgURL="https://cdn.waterstones.com/bookjackets/large/9781/4746/9781474609883.jpg"
+  />
+  <Book
+    title="Software Engineering at Google: Lessons Learned from Programming Over Time"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1576579607l/48816586.jpg"
+  />
+  <Book
+    title="Invisible Women"
+    imgURL="https://cdn.waterstones.com/bookjackets/large/9781/7847/9781784706289.jpg"
+  />
+  <Book
+    title="Circe"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1565909496l/35959740._SY475_.jpg"
+  />
+  <Book 
+    title="Brave New World"
+    imgURL="https://upload.wikimedia.org/wikipedia/en/6/62/BraveNewWorld_FirstEdition.jpg"
+  />
+  <Book 
+    title="The Phoenix Project"
+    imgURL="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1361113128l/17255186.jpg"
+  />
+</Books>
+
+
+
+- https://www.deeplearningbook.org/
+- http://karpathy.github.io/
+- https://overreacted.io/
