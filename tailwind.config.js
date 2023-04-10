@@ -6,7 +6,12 @@ module.exports = {
   ],
   darkMode: "class", // or 'media' or 'class'
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-suisse-intl)"],
+        mono: ["var(--font-suisse-intl-mono)"],
+      },
+    },
   },
   variants: {
     extend: {},

@@ -1,17 +1,19 @@
 import React from "react";
+import { Metadata } from "next";
 import localFont from "next/font/local";
 import clsx from "clsx";
 import "./global.css";
 import PageLinks from "./PageLinks";
 //import { MDXProvider } from "@mdx-js/react";
 
-export const suisseIntl = localFont({
+const suisseIntl = localFont({
+  variable: "--font-suisse-intl",
+  display: "swap",
   src: [
     {
       path: "../public/SuisseIntl/SuisseIntl-Regular-WebM.woff2",
       weight: "400",
       style: "normal",
-      display: "swap",
     },
     {
       path: "../public/SuisseIntl/SuisseIntl-RegularItalic-WebM.woff2",
@@ -41,7 +43,9 @@ export const suisseIntl = localFont({
   ],
 });
 
-export const suisseIntlMono = localFont({
+const suisseIntlMono = localFont({
+  variable: "--font-suisse-intl-mono",
+  display: "swap",
   src: [
     {
       path: "../public/SuisseIntl/SuisseIntlMono-Bold-WebS.woff2",
@@ -131,7 +135,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={clsx(suisseIntl.className, "antialiased ")}>
+    <html
+      lang="en"
+      className={clsx(
+        suisseIntl.variable,
+        suisseIntlMono.variable,
+        "antialiased"
+      )}
+    >
       <body className="max-w-6xl flex flex-col md:flex-row mx-4 mt-8 md:mt-20 lg:mt-32 lg:mx-auto">
         <div className="md:flex-shrink-0 -mx-4 md:mx-0 md:px-0">
           {/* Sidebar component, swap this element with another sidebar if you like */}
@@ -171,20 +182,3 @@ export default function RootLayout({
     </html>
   );
 }
-/*
-        <MDXProvider
-          components={{
-            h1: (props) => (
-              <h1
-                className="sticky top-0 py-4 text-2xl bg-white sm:text-4xl"
-                {...props}
-              />
-            ),
-            h2: (props) => (
-              <h2 className="py-4 text-xl sm:text-2xl" {...props} />
-            ),
-          }}
-        >
-
-        </MDXProvider>
-*/
