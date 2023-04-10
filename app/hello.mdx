@@ -1,0 +1,31 @@
+## Edward McFarlane
+
+export function Hide({ children }) {
+  const style = {
+    display: "none",
+  };
+  return <span style={style}>{children}</span>;
+}
+
+export const Hero = ({children}) => (
+  <div className="flex flex-col gap-10 sm:flex-row">
+    <img
+      className="aspect-square w-52 flex-none object-cover"
+      src="/eddie_small.jpg"
+      alt="Profile picture"
+    />
+    <div className="max-w-xl flex-auto">
+      {children}
+    </div>
+  </div>
+);
+
+<Hero>
+Hey, I'm Edward, a software developer based in London.
+
+Working on McFarlane Projects, a small software development company:
+[mcfarlaneprojects.com](https://mcfarlaneprojects.com)
+
+Get in touch: 
+edward<Hide>@bot</Hide>@mcfarlaneprojects.com
+</Hero>
