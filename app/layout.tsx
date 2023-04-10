@@ -118,7 +118,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     title: "Edward McFarlane",
-    card: "",
   },
   icons: {
     shortcut: "/favicon.ico",
