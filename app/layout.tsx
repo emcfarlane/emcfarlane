@@ -146,10 +146,8 @@ export default function RootLayout({
         <div className="md:flex-shrink-0 -mx-4 md:mx-0 md:px-0">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex grow flex-col gap-y-2 overflow-y-auto bg-white px-6 pb-2">
-            <div className="flex h-16 shrink-0 items-center">
-              <h2 className="inline-block font-serif font-medium align-middle text-5xl">
-                e
-              </h2>
+            <div className="text-center">
+              <img src="/favicon.ico" className="h-10 mx-auto" />
             </div>
             <nav className="flex flex-1 flex-col">
               <ul
