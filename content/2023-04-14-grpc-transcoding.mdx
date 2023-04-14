@@ -1,0 +1,55 @@
+---
+title: Fast & Simple gRPC Transcoding in Go
+tags: [grpc]
+---
+
+I've been hacking on [larking.io](https://github.com/emcfarlane/larking), a Go library for implementing gRPC transcoding. It works using the new protobuffer APIs to load protobuf descriptors on the fly. In this post, I'll explain how larking.io works and why it's fast.
+
+![larking](/content/grpc/larking.svg)
+
+## Transcoding
+gRPC transcoding is a method of mapping REST-like endpoints to gRPC methods. With gRPC, developers can create simple handlers that model input and output without having to worry about encoding/decoding methods for each new endpoint. gRPC uses code generators to implement concrete methods to develop against, so as a developer, you only need to focus on input/output mapping and not worry about implementing repetitive encoding/decoding code.
+
+Most implementations use code generation to handle HTTP transcoding. For instance, [gRPC-Gateway](https://grpc-ecosystem.github.io/grpc-gateway/) is the most popular Go implementation, which generates a `service.pb.gw.go` file using `--grpc-gateway_out` flag on the protoc command. However, code generation can bloat the binary, cause merge conflicts, and be difficult to manage versions between developers. Protobuffers already have the full specification compiled into the go code `service.pb.go` files, which is where larking.io library comes in. Larking generates handlers at runtime without the need for code generation using ProtoReflect. 
+
+## ProtoReflect
+The Go protobuffer library has been overhauled in [`google.golang.org/protobuf`](https://pkg.go.dev/google.golang.org/protobuf), giving Go programs powerful tools to manipulate protobufs. When the `larking.Mux` registers a service or gRPC connection, it loads the file description and processes the service descriptors. Then, it loops over each method to find any [http annotations](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L316) and adds all to the Muxer. Most of the work is done upfront in the [`addRule`](https://github.com/emcfarlane/larking/blob/2efe0b3072c94a4c911be32f57b9445b6365a37a/larking/rules.go#L235-L240) function. This function takes a `*annotations.HttpRule` and `protoreflect.MethodDescriptor` matching it to the underlying gRPC service call.
+
+Paths are processed using a [custom lexer](https://github.com/emcfarlane/larking/blob/main/larking/lexer.go#L14-L21), which takes the raw path string and lexes it into tokens that the handler can efficiently process for new paths. We build a kind of [`trie`](https://github.com/emcfarlane/larking/blob/2efe0b3072c94a4c911be32f57b9445b6365a37a/larking/rules.go#L56-L61) prefixed by segments of the path, then capture variables with the leaves ending in methods. On each request, we parse the path, search through the tree, and match to a method or return 404. Each path variable maps to fields in the input request of the method.
+
+So how fast is it?
+
+## Benchmarks
+Checkout the benchmark code [here](https://github.com/emcfarlane/larking/tree/main/benchmarks).
+
+The benchmark Implements a library service described in [google standard methods](https://cloud.google.com/apis/design/standard_methods). We setup both services on a port and run a method per bench test fully e2e.
+
+### Results
+ProtoReflect wins 🎉, just about. The benchmark results are below. The benchmark tests the following methods:
+- `BenchmarkLarking/*`: protoreflect methods
+- `BenchmarkGRPCGateway/*`: gRPC gateway methods
+
+```
+go test -bench .
+
+goos: darwin
+goarch: amd64
+pkg: larking.io/benchmarks
+cpu: VirtualApple @ 2.50GHz
+BenchmarkLarking/GRPC_GetBook-8                    13924             82844 ns/op           25553 B/op        230 allocs/op
+BenchmarkLarking/HTTP_GetBook-8                    21138             55623 ns/op           10195 B/op        159 allocs/op
+BenchmarkLarking/HTTP_UpdateBook-8                 21183             56131 ns/op           12281 B/op        185 allocs/op
+BenchmarkLarking/HTTP_DeleteBook-8                 27067             44510 ns/op            8473 B/op        105 allocs/op
+BenchmarkGRPCGateway/GRPC_GetBook-8                25866             46007 ns/op            9498 B/op        178 allocs/op
+BenchmarkGRPCGateway/HTTP_GetBook-8                22068             54054 ns/op           10748 B/op        173 allocs/op
+BenchmarkGRPCGateway/HTTP_UpdateBook-8             19158             61761 ns/op           16287 B/op        223 allocs/op
+BenchmarkGRPCGateway/HTTP_DeleteBook-8             28112             42483 ns/op            8688 B/op        112 allocs/op
+PASS
+ok      larking.io/benchmarks   14.510s
+```
+All methods tested allocated less, with more complex methods like `UpdateBook` showing the biggest difference in speed(1.3x faster) but all methods were roughly the same speed.
+
+`GRPC_GetBook-8` method was slow. The `Server` implementation of Larking uses the experimental `ServeHTTP` method that doesn't rely on gRPC's custom HTTP/2 stack. This is done to support deploying to cloud run, as explained in detail in Ahmet's blog post on [grpc-http-mux-go](https://ahmet.im/blog/grpc-http-mux-go/). In contrast, the gRPC gateway in this benchmark uses the library [github.com/soheilhy/cmux](https://github.com/soheilhy/cmux) to multiplex connections. I'll add back `cmux` as a serve option for users to easily switch between the two methods if needed. Hopefully gRPC will eventually pivot to the HTTP/2 stack in the standard library.
+
+## Conclusion
+Larking simplifies serving gRPC annotations from Go and benchmarks show it to be in the same ballpark as generated code. However, as with any benchmarks, take these with a grain of salt. It is a promising approach that reduces the overhead of generating REST APIs. Please try it out and report any issues, as I'm actively working on building out new features. For example, websockets with full streaming and better bindings to typescript to allow web clients are currently in the works.
