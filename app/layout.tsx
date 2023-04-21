@@ -1,6 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/react";
 import clsx from "clsx";
 import "./global.css";
 import PageLinks from "./PageLinks";
@@ -174,6 +175,7 @@ export default function RootLayout({
 
         <main className="flex-auto min-w-0 mt-6 md:mt-0 mb-8 md:mb-20 lg:mb-32 flex flex-col px-2 md:px-0">
           <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <Analytics />
         </main>
       </body>
     </html>
