@@ -1,0 +1,63 @@
+---
+title: Next.js 13 with Firebase Hosting
+tags: [nextjs, firebase]
+---
+
+Firebase [webframeworks](https://firebase.google.com/docs/hosting/frameworks/nextjs) 
+is currently in beta, and is missing some features.
+
+To support nextjs 13's [app router](https://beta.nextjs.org/docs/app-directory-roadmap) we can ignore webframeworks for now and use firebase hosting rewrites to route requests to cloud run. 
+We will still want to use firebase hosting for serving static content to keep costs down.
+
+## Build steps
+
+Build your nextjs app for [cloud run deployments](https://github.com/vercel/next.js/tree/canary/examples/with-docker) as per the docs. For firebase hosting simply copy the `.next/static/` to `out/_next/static/` to allow firebase hosting to serve static content. 
+
+Your `package.json` should have a build script like this:
+```
+npm run build && cp -r .next/static/ out/_next/static
+```
+
+and a `firebase.json` with cloud run rewrites:
+```json
+{
+  "hosting": {
+    "public": "out",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "star",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/**",
+        "run": {
+          "serviceId": "nextstar",
+          "region": "europe-west1"
+        }
+      }
+    ],
+    "cleanUrls": true
+  },
+  "emulators": {
+    "hosting": {
+      "port": 5000,
+      "host": "127.0.0.1"
+    },
+    "firestore": {
+      "port": "8080",
+      "host": "127.0.0.1"
+    },
+    "ui": {
+      "enabled": true,
+      "host": "0.0.0.0",
+      "port": 4000
+    }
+  }
+}
+```
+
+Happy shipping!
