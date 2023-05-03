@@ -1,0 +1,85 @@
+---
+title: Bufferless append
+tags: [go, grpc, larking]
+---
+
+Go provides great interfaces for reading and writing streams of data with the [io](https://pkg.go.dev/io) package. Passing interfaces also allow for some great optimisations like upgrading the interface to an `io.WriteTo` for example when calling [`io.Copy`](https://pkg.go.dev/io#Copy).  When dealing with streams of data interfaces are the way to go. When we need to inspect the data we need to write the stream to buffers, typically [`bytes.Buffer`](https://pkg.go.dev/bytes#Buffer) . However `bytes.NewBuffer` allocates and is maybe more than we need. Here I will go through some optimisations for my gRPC transcoding library [larking](https://github.com/emcfarlane/larking) where we drop down to byte slices for optimising allocations.
+
+## Protobuf MarshalAppend
+The default [`Marshal`](https://pkg.go.dev/google.golang.org/protobuf@v1.30.0/proto#Marshal) API is:
+```go
+func Marshal(m proto.Message) ([]byte, error)
+```
+Most implementation use this API to convert a message before writing to the wire. This API has to allocate, it returns an array of bytes which must be set on the heap. However there is a more optimised API, [`MarshalAppend`](https://pkg.go.dev/google.golang.org/protobuf@v1.30.0/proto#MarshalOptions.MarshalAppend):
+```go
+func MarshalAppend(b []byte, m proto.Message) ([]byte, error)
+```
+This _might_ allocate. MarshalAppend appends the wire-format encoding of m to b, returning the result. If b's capacity is greater than the wire-length and internal buffering needed by MarshalAppend the returned byte slice will point to the same underlying array. Zero allocations.
+
+gRPC transcoding uses both the protobuf encoding and the protojson encoding. I added support for protojson `MarshalAppend` in this [change request](https://go-review.googlesource.com/c/protobuf/+/489615) which copies over the API. Applying it to [larking](https://github.com/emcfarlane/larking/pull/89/files#diff-7fc6d18b36618f1cc66b8cfc37f348e6a8f4340417f9ee7daa26888fe613b3d4L89-L90) we can see it dropped an average `3 allocs/op`.
+
+## ReadAll to a limit
+To read a stream into a buffer we need to call `Read` repeatedly on a reader. To avoid reading too much we also want to limit the read to our max supported message size. This could look like:
+```go
+b, err := io.ReadAll(io.LimitReader(r, int64(maxReceiveMessageSize)+1))
+if err != nil {
+	return nil, err
+}
+if len(b) > maxReceiveMessageSize {
+	return nil, fmt.Errorf("max receive message size reached")
+}
+return b, nil
+```
+The API [`io.ReadAll`](https://pkg.go.dev/io#ReadAll) returns a slice of bytes forcing an allocation. Also the limit reader has to be heap allocated, it's a pointer to a writer with a counter. Taking inspiration from the protobuf append APIs we could implement a function like:
+```go
+func ReadAllAppend(b []byte, r io.Reader) ([]byte, error)
+```
+Copying the implementation of `io.ReadAll` with an added check for the total bytes read. The above could now be implement as:
+```go
+var total int64
+for {
+	if len(b) == cap(b) {
+		// Add more capacity (let append pick how much).
+		b = append(b, 0)[:len(b)]
+	}
+	n, err := r.Read(b[len(b):cap(b)])
+	b = b[:len(b)+n]
+	total += int64(n)
+	if total > int64(maxReceiveMessageSize) {
+		return nil, fmt.Errorf("max receive message size reached")
+	}
+	if err != nil {
+		if err == io.EOF {
+			err = nil
+		}
+		return b, err
+	}
+}
+```
+This _might_ allocate. Read and append bytes from r into b, append if needed. We also remove the limit reader allocation.
+
+## Sync pool to manage byte arrays
+Sharing buffer allocations amortises the cost of the initial buffers between calls. A `sync.Pool` implementation might look like:
+```go
+var bytesPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, 0, 64)
+		return &b
+	},
+}
+```
+
+ When we need to fetch a buffer we can call the pool and defer pushing the slice back to the pool. Importantly we must use a pointer to the slice header to fit within the `any` type without the `any` type allocating! It's also important to drop large slices to ensure clients can't pin large amounts of memory in a live lock situation.
+```go
+bytes := bytesPool.Get().(*[]byte)
+b := (*bytes)[:0]
+defer func() {
+	if cap(b) < (1 << 20) {
+		*bytes = b
+		bytesPool.Put(bytes)
+	}
+}()
+```
+
+## Conclusion
+API's with append style syntax can avoid forcing allocating by sharing slices. Might not is better then has to!
