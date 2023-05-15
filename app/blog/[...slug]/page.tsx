@@ -1,7 +1,16 @@
 import { allBlogs } from "contentlayer/generated";
+import type { MDXComponents } from "mdx/types";
 import { useMDXComponent } from "next-contentlayer/hooks";
+import Link from "next/link";
+//import clsx from "clsx";
 
 import { format, parseISO } from "date-fns";
+
+// Define your custom MDX components.
+const mdxComponents: MDXComponents = {
+  // Override the default <a> element to use the next/link component.
+  a: ({ href, children }) => <Link href={href as string}>{children}</Link>,
+};
 
 function BlogPost({ post }) {
   const MDXContent = useMDXComponent(post.body.code);
@@ -15,7 +24,7 @@ function BlogPost({ post }) {
         </time>
       </div>
       <article className="prose lg:prose-xl dark:prose-invert">
-        <MDXContent />
+        <MDXContent components={mdxComponents} />
       </article>
     </section>
   );

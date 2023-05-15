@@ -1,0 +1,81 @@
+---
+title: Go HTTP/1 > HTTP/2
+tags: [go, grpc, larking]
+---
+
+Go's current HTTP/2 stack is a little weird. You need a bit of magic to make it work without TLS:
+```go
+h2s := &http2.Server{}
+server := &http.Server{
+	Handler: h2c.NewHandler(mux, h2s),
+}
+```
+But once you've copied that snippet you're off to the races and can willy nilly dial HTTP/2 servers with fancy new HTTP/2 clients. Out of the box you'd expect HTTP/2 to be better than HTTP/1. After all 2 > 1, but if you actually test if 2 is in fact greater than 1 you get mixed results, sometimes 1 > 2 🙃.
+
+## gRPC Serve.HTTP
+If you use HTTP/2 it's most likely through an RPC protocol like gRPC which focuses on it. GRPC abandoned the go net/http `ServeHTTP(w, r)` interface a while ago stating performance as the main reason (I think it used HTTP/2 before the std library had implemented it too). However, many libraries have tried to kill `ServeHTTP` but it's pretty ubiquitous in the ecosystem and is nice to be able to play well with others. GRPC reintroduced HTTP compatability with a custom transport to implement `ServeHTTP` again.
+
+I've been working on a HTTP library, [larking](https://github.com/emcfarlane/larking), to transcode gRPC annotations from HTTP/1, websockets and HTTP/2 clients back to gRPC methods. 
+It is intended to be used in process as a replacement for  [`grpc.Server.ServeHTTP`](https://pkg.go.dev/google.golang.org/grpc#Server.ServeHTTP) to work well behind proxies that like to multiplex streams on a [single connection](https://ahmet.im/blog/grpc-http-mux-go/). 
+
+A simple benchmark to highlight the three different bindings for the one unary method:
+- `BenchmarkLarking/GRPC_GetBook` uses **grpc.ServeHTTP** with net/http HTTP/2 stack.
+- `BenchmarkLarking/HTTP_GetBook` uses **http.ServeHTTP** with net/http HTTP/1 stack.
+- `BenchmarkGRPC/GRPC_GetBook` uses **cmux** and **grpc.Serve** with grpc HTTP/2 stack.
+
+```
+BenchmarkLarking/GRPC_GetBook-8         	   16065	     73217 ns/op	   25753 B/op	     234 allocs/op
+BenchmarkLarking/HTTP_GetBook-8         	   25358	     47049 ns/op	    9179 B/op	     146 allocs/op
+BenchmarkGRPC/GRPC_GetBook-8     	           32599	     36980 ns/op	    9495 B/op	     178 allocs/op
+```
+Results: gRPC > HTTP/1 > HTT/2. HTTP/1 method with transcoding (mapping paths to protobufs) is **1.3x** slower and the `ServeHTTP` method is **2x** slower!
+
+The gRPC method is [experimental](https://pkg.go.dev/google.golang.org/grpc#Server.ServeHTTP) in the docs. So the speed differences must be because it's missing some easy optimisations, right?
+
+Transcoding being so close to gRPC could be because the implementation does a lot less work than the gRPC one. It's not as well tested and has much less features. Not exactly a fair comparison. 
+
+If we implemented similar logic to the transcoding but with the HTTP2 stack I'd expect to be around the same speed as the original gRPC one, albeit with less features. Lets implement gRPC!
+
+## GRPC implementation
+Mapping gRPC-transcoding methods to gRPC services gives us most of the logic needed to build a custom gRPC implementation. 
+We can create a `ServeHTTP` method to replace `grpc.ServeHTTP` with similar logic to the current transcoding but optimised for the gRPC protocol.
+Then I can compare gRPC-transcoding HTTP/1 to gRPC HTTP/2 with net/http and see how far off we are from the original gRPC implementation.
+
+To test I've used gRPC-go's [benchmem](https://github.com/grpc/grpc-go/blob/master/Documentation/benchmark.md) tool to create a test suite and a way to compare the two implementations. I've clone some of the packages under [larking/benchmarks](https://github.com/emcfarlane/larking/tree/main/benchmarks) to convert the calls to use the alternate server implementations.
+
+### Benchmarks
+One weekend later and we have an new implementation: [PR](https://github.com/emcfarlane/larking/pull/104).
+
+It's mostly written in a single file [`larking/grpc.go`](https://github.com/emcfarlane/larking/blob/main/larking/grpc.go). It passes the current test suite and benchmarking tests, but need's a lot more validation. However, for now it will work as a good comparison to compare HTTP stacks.
+
+- `BenchmarkLarking/GRPC_GetBook` uses **http.ServeHTTP** with net/http HTTP/2 stack.
+- `BenchmarkLarking/HTTP_GetBook` uses **http.ServeHTTP** with net/http HTTP/1 stack.
+- `BenchmarkGRPC/GRPC_GetBook` uses **cmux** and **grpc.Serve** with grpc HTTP/2 stack.
+```
+BenchmarkLarking/GRPC_GetBook-8         	   19376	     60966 ns/op	   13877 B/op	     193 allocs/op
+BenchmarkLarking/HTTP_GetBook-8         	   25690	     46071 ns/op	    9230 B/op	     144 allocs/op
+BenchmarkGRPC/GRPC_GetBook-8            	   29191	     40917 ns/op	    9498 B/op	     178 allocs/op
+```
+Results: gRPC > HTTP/1 > HTT/2. HTTP/1 method with transcoding still beats HTTP/2 without. The ServeHTTP method is **1.6x** slower than gRPC server stack and all that work and we are still slower than the HTTP/1 stack.
+
+![wat](/content/servehttp/Wat-duck.png)
+
+See [larking/benchmarks](https://github.com/emcfarlane/larking/tree/main/benchmarks) for the full results and the benchmarks using gRPC tools.
+
+## Issues with Go HTTP/2
+
+Profiling the benchmark above and we get:
+<object width="100%" height="500px" type="image/svg+xml" data="/content/servehttp/pprofGRPCServeHTTP.svg"></object>
+
+`readMetaFrame` seems to be a big culprit.
+I've started a meta [issue](https://github.com/emcfarlane/larking/issues/105) to track go issues that look related to the profile graph.
+
+## Conculsion
+
+The new gRPC handler is small and simple, but it's still slower than the current gRPC methods.
+HTTP/2 for simple HTTP handlers is slower than HTTP/1.
+
+For gRPC-transcoding I think it's the fastest implementation so far.
+Please try it out and let me know if you find any issues!
+
+[github.com/emcfarlane/larking](https://github.com/emcfarlane/larking)
