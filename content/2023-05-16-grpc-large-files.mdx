@@ -1,0 +1,92 @@
+---
+title: gRPC-transcoding Large Files
+tags: [go, grpc, larking]
+---
+
+To stream arbitrary content with gRPC-transcoding you can use [google.api.HttpBody](https://github.com/googleapis/googleapis/blob/master/google/api/httpbody.proto) messages to control the content type. This can also be used in streaming requests with the first message taking parameters from the request. 
+
+Here is an example service `Files` with annotations to upload and download files:
+```protobuf
+import "google/api/httpbody.proto";
+
+service Files {
+  // HTTP | gRPC
+  // -----|-----
+  // `POST /files/cat.jpg <body>` | `UploadDownload(filename: "cat.jpg", file:
+  // { content_type: "image/jpeg", data: <body>})"`
+  rpc UploadDownload(UploadFileRequest) returns (google.api.HttpBody) {
+    option (google.api.http) = {
+      post : "/files/{filename}"
+      body : "file"
+    };
+  }
+  // Stream files greater than the gRPC message size limits.
+  rpc LargeUploadDownload(stream UploadFileRequest)
+      returns (stream google.api.HttpBody) {
+    option (google.api.http) = {
+      post : "/files/large/{filename}"
+      body : "file"
+    };
+  }
+}
+message UploadFileRequest {
+  string filename = 1; // Encoded from the URL path
+  google.api.HttpBody file = 2;
+}
+```
+
+Typically you would send and receive files as part of the gRPC request and let the transport marshal the message into types. Something like:
+
+```go
+type Server struct {
+	testpb.UnimplementedFilesServer
+}
+
+// UploadDownload echoes the request body to the response as a unary request.
+func (s *Server) UploadDownload(ctx context.Context, req *testpb.UploadFileRequest) (*httpbody.HttpBody, error) {
+	log.Printf("got %s!", req.Filename)
+	return &httpbody.HttpBody{
+		ContentType: req.File.GetContentType(),
+		Data:        req.File.GetData(),
+	}, nil
+}
+```
+This works but it's inefficient. The body needs to be chunked into bytes and given to the handler. Then the messages need to be converted back to a stream of bytes for the response. This might be okay for a small request, but large files will churn through bytes. We also loose the nice interfaces for `io.Reader` and `io.Writer` not to mention the even better interfaces like [`io.ReaderFrom`](https://pkg.go.dev/io#ReaderFrom) and [`io.WriterTo`](https://pkg.go.dev/io#WriterTo) that make Go so fast.
+
+So if our mux is a HTTP server we could wrap it and handle the unmarshalling in a regular `func(w http.ResponseWriter, r *http.Request)`. The downsides of this is that our generated code is no longer the source of truth. We need to make sure that we also handle request parameters correctly and keep it in sync with the protobuf annotations.
+
+## AsHTTPBody
+
+Let's get much faster with two new methods:
+```go
+func AsHTTPBodyReader(stream grpc.ServerStream, msg proto.Message) (io.Reader, error)
+func AsHTTPBodyWriter(stream grpc.ServerStream, msg proto.Message) (io.Writer, error)
+```
+
+This uses the stream to check for `google.api.HttpBody` messages and provides an efficient `io.Reader` and `io.Writer` to stream large messages (under the hood it is returning the raw HTTP body reader and writers so WriterTo and ReaderFrom work!).
+This methods only works on streaming requests or streaming responses for gRPC-transcoding streams. It handles unmarshalling and marshalling of the first messages to set parameters correctly.
+```go
+// LargeUploadDownload echoes the request body as the response body with contentType.
+func (s *Server) LargeUploadDownload(stream testpb.Files_LargeUploadDownloadServer) error {
+	var req testpb.UploadFileRequest
+	r, err := larking.AsHTTPBodyReader(stream, &req)
+	if err != nil {
+		return err
+	}
+	log.Printf("got %s!", req.Filename)
+
+	rsp := httpbody.HttpBody{
+		ContentType: req.File.GetContentType(),
+	}
+	w, err := larking.AsHTTPBodyWriter(stream, &rsp)
+	if err != nil {
+		return err
+	}
+	_, err := io.Copy(w, r)
+	return err
+}
+```
+
+## Larking
+Checkout [github.com/emcfarlane/larking](https://github.com/emcfarlane/larking)
+to see how to use this with a HTTP server and gRPC-transcoding.
