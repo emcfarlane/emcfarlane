@@ -1,0 +1,59 @@
+---
+title: Workflow Engine
+tags: [go, laze]
+---
+
+Designing a workflow engine.
+
+## Requirements
+
+- A workflow is a collection of tasks
+
+## Rules
+
+A rule defines an action that can be declared.
+Rules can be provided by starlark. 
+
+
+```python
+def _impl(input = "world"):
+  return "hello " + input
+
+hello = rule(
+  impl = _impl,
+  attrs = {
+    input = attr.string(),
+  },
+  provides = [
+    attr.string(),
+  ],
+)
+```
+
+## Targets
+
+A target is declared when intiating a rule. 
+
+```python
+label = hello(
+  input = "world",
+)
+```
+
+## Dependencies
+
+Dependencies are declared by passing a label as an input to a rule.
+Labels are returned by rules. 
+
+```python
+label2 = hello(
+  input = label,
+)
+```
+
+### Dependency Graph
+
+A dependency graph is a directed acyclic graph (DAG) of targets.
+The graph is constructed by recursively calling the rule's implementation function.
+The graph is constructed by calling the rule's implementation function.
+
